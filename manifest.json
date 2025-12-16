@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Ultimate Guitar Flow",
+  "version": "1.0.0",
+  "description": "Clean, minimal chord and lyrics view for Ultimate Guitar tabs",
+  "permissions": [],
+  "content_scripts": [
+    {
+      "matches": ["https://tabs.ultimate-guitar.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ]
+}
