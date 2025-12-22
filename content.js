@@ -1,6 +1,11 @@
 (function() {
   'use strict';
 
+  // Only run on chord pages, not tabs
+  if (!window.location.href.includes('-chords-')) {
+    return;
+  }
+
   let isSimplifiedView = false;
   let ugfContainer = null;
   let ugfStyles = null;
@@ -24,13 +29,29 @@
     // Process the content to split into sections for column layout
     const content = preClone.innerHTML;
 
-    // Split by section headers [Verse], [Chorus], etc.
-    const sectionRegex = /\[([^\]]+)\]/g;
+    // Split by section headers [Verse], [Chorus], {Verse}, {Chorus}, etc.
+    // Only match headers with simple text (letters, numbers, spaces) - not HTML
+    const sectionRegex = /[\[{]([A-Za-z0-9 ]+)[\]}]/g;
     const sections = [];
 
-    // Find content before first section (intro/chord definitions)
+    // Check if there are any section headers
     const firstMatch = content.match(sectionRegex);
-    if (firstMatch) {
+
+    if (!firstMatch) {
+      // No section headers - split on double line breaks (blank lines)
+      const chunks = content.split(/\n\s*\n/);
+      for (const chunk of chunks) {
+        const trimmed = chunk.trim();
+        if (trimmed) {
+          sections.push({ title: '', content: trimmed });
+        }
+      }
+      // If still just one big chunk, use it as-is
+      if (sections.length === 0) {
+        sections.push({ title: '', content: content.trim() });
+      }
+    } else {
+      // Find content before first section (intro/chord definitions)
       const firstSectionIndex = content.indexOf(firstMatch[0]);
       if (firstSectionIndex > 0) {
         const introContent = content.substring(0, firstSectionIndex).trim();
@@ -38,17 +59,17 @@
           sections.push({ title: '', content: introContent });
         }
       }
-    }
 
-    // Split remaining content by sections
-    const parts = content.split(sectionRegex);
+      // Split remaining content by sections
+      const parts = content.split(sectionRegex);
 
-    // parts[0] is content before first section (already handled)
-    // parts[1] is first section title, parts[2] is first section content, etc.
-    for (let i = 1; i < parts.length; i += 2) {
-      const sectionTitle = parts[i];
-      const sectionContent = parts[i + 1] ? parts[i + 1].trim() : '';
-      sections.push({ title: sectionTitle, content: sectionContent });
+      // parts[0] is content before first section (already handled)
+      // parts[1] is first section title, parts[2] is first section content, etc.
+      for (let i = 1; i < parts.length; i += 2) {
+        const sectionTitle = parts[i];
+        const sectionContent = parts[i + 1] ? parts[i + 1].trim() : '';
+        sections.push({ title: sectionTitle, content: sectionContent });
+      }
     }
 
     return { title, artist, sections };
