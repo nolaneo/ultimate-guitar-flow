@@ -1,6 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Ultimate Guitar Flow",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "ultimate-guitar-flow@nolaneo",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
   "version": "1.0.0",
   "description": "Clean, minimal chord and lyrics view for Ultimate Guitar tabs",
   "permissions": [],
