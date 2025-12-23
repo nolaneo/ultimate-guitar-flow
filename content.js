@@ -37,24 +37,27 @@
     // Check if there are any section headers
     const firstMatch = content.match(sectionRegex);
 
+    // Helper to trim only leading/trailing newlines, preserving horizontal spacing
+    const trimNewlines = (str) => str.replace(/^\n+/, '').replace(/\n+$/, '');
+
     if (!firstMatch) {
       // No section headers - split on double line breaks (blank lines)
       const chunks = content.split(/\n\s*\n/);
       for (const chunk of chunks) {
-        const trimmed = chunk.trim();
+        const trimmed = trimNewlines(chunk);
         if (trimmed) {
           sections.push({ title: '', content: trimmed });
         }
       }
       // If still just one big chunk, use it as-is
       if (sections.length === 0) {
-        sections.push({ title: '', content: content.trim() });
+        sections.push({ title: '', content: trimNewlines(content) });
       }
     } else {
       // Find content before first section (intro/chord definitions)
       const firstSectionIndex = content.indexOf(firstMatch[0]);
       if (firstSectionIndex > 0) {
-        const introContent = content.substring(0, firstSectionIndex).trim();
+        const introContent = trimNewlines(content.substring(0, firstSectionIndex));
         if (introContent) {
           sections.push({ title: '', content: introContent });
         }
@@ -67,7 +70,7 @@
       // parts[1] is first section title, parts[2] is first section content, etc.
       for (let i = 1; i < parts.length; i += 2) {
         const sectionTitle = parts[i];
-        const sectionContent = parts[i + 1] ? parts[i + 1].trim() : '';
+        const sectionContent = parts[i + 1] ? trimNewlines(parts[i + 1]) : '';
         sections.push({ title: sectionTitle, content: sectionContent });
       }
     }
