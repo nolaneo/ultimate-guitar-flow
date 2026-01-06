@@ -9,7 +9,7 @@
       }
     }
   },
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Clean, minimal chord and lyrics view for Ultimate Guitar tabs",
   "permissions": [],
   "content_scripts": [
