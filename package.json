@@ -1,0 +1,31 @@
+{
+  "name": "ultimate-guitar-flow",
+  "version": "1.0.0",
+  "description": "Clean, minimal chord and lyrics view for Ultimate Guitar tabs",
+  "main": "content.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "build": "esbuild src/content.js --bundle --outfile=content.js --format=iife --target=es2020 --minify",
+    "watch": "esbuild src/content.js --bundle --outfile=content.js --format=iife --target=es2020 --watch",
+    "package": "npm run build && bash build.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nolaneo/ultimate-guitar-flow.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/nolaneo/ultimate-guitar-flow/issues"
+  },
+  "homepage": "https://github.com/nolaneo/ultimate-guitar-flow#readme",
+  "dependencies": {
+    "@tombatossals/chords-db": "^0.5.1",
+    "esbuild": "^0.27.3",
+    "svguitar": "^2.5.0"
+  }
+}

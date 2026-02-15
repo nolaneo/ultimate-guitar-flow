@@ -9,6 +9,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Bundle the source files with esbuild
+echo "Bundling source files..."
+npm run build
+
 # Extract version from manifest.json
 VERSION=$(grep -o '"version": "[^"]*"' manifest.json | cut -d'"' -f4)
 
