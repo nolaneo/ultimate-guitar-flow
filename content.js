@@ -19,6 +19,9 @@
     const artistLink = document.querySelector('a[href*="/artist/"]');
     const artist = artistLink ? artistLink.textContent.trim() : 'Unknown';
 
+    // Get other versions from the "More Versions" section
+    const versions = extractVersions();
+
     // Get the pre element containing chords and lyrics
     const preEl = document.querySelector('pre.xNWlr');
     if (!preEl) return null;
@@ -75,7 +78,119 @@
       }
     }
 
-    return { title, artist, sections };
+    return { title, artist, sections, versions };
+  }
+
+  function extractVersions() {
+    const versions = [];
+
+    // Find all anchor tags that contain a rating meter - these are version links
+    const versionLinks = document.querySelectorAll('a:has([role="meter"][aria-label="Rating"])');
+
+    for (const link of versionLinks) {
+      const href = link.getAttribute('href');
+      if (!href) continue;
+
+      // Get the version name from the first span child (before the meter)
+      const nameSpan = link.querySelector(':scope > span');
+      const name = nameSpan ? nameSpan.textContent.trim() : 'Unknown';
+
+      // Skip the official version (it's a pro/paid link)
+      if (name.toLowerCase() === 'official') continue;
+
+      const isCurrent = link.hasAttribute('data-current') || link.getAttribute('aria-current') === 'page';
+
+      // Get the rating from the meter element's aria-valuenow
+      const meter = link.querySelector('[role="meter"][aria-label="Rating"]');
+      const rating = meter ? meter.getAttribute('aria-valuenow') : '';
+
+      // Get the votes count - it's in a span with text like "(3.1K)"
+      let votes = '';
+      if (meter) {
+        const spans = meter.querySelectorAll('span');
+        for (const span of spans) {
+          const text = span.textContent.trim();
+          const match = text.match(/^\(([\d.,]+K?)\)$/);
+          if (match) {
+            votes = match[1];
+            break;
+          }
+        }
+      }
+
+      versions.push({
+        href,
+        name,
+        rating,
+        votes,
+        isCurrent
+      });
+    }
+
+    return versions;
+  }
+
+  function buildVersionDropdown(versions) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'ugf-version-dropdown';
+
+    // Find current version for the button label
+    const currentVersion = versions.find(v => v.isCurrent);
+    const currentLabel = currentVersion ? currentVersion.name : 'Version';
+
+    // Build rating display for button
+    let ratingHtml = '';
+    if (currentVersion && currentVersion.rating) {
+      ratingHtml = `<span class="ugf-btn-rating">★ ${currentVersion.rating}</span>`;
+      if (currentVersion.votes) {
+        ratingHtml += `<span class="ugf-btn-votes">(${currentVersion.votes})</span>`;
+      }
+    }
+
+    // Create dropdown button
+    const button = document.createElement('button');
+    button.className = 'ugf-version-btn';
+    button.innerHTML = `
+      <span>${currentLabel}</span>
+      ${ratingHtml}
+      <svg viewBox="0 0 20 20" class="ugf-dropdown-arrow">
+        <path fill-rule="evenodd" d="M16.5 7.393 10 14 3.5 7.393 4.87 6 10 11.214 15.13 6z" clip-rule="evenodd"></path>
+      </svg>
+    `;
+
+    // Create dropdown menu
+    const menu = document.createElement('div');
+    menu.className = 'ugf-version-menu';
+
+    for (const version of versions) {
+      const item = document.createElement('a');
+      item.className = 'ugf-version-item' + (version.isCurrent ? ' ugf-version-current' : '');
+      item.href = version.href;
+
+      item.innerHTML = `
+        <span class="ugf-version-name">${version.name}</span>
+        <span class="ugf-version-rating">${version.rating ? '★ ' + version.rating : ''}</span>
+        <span class="ugf-version-votes">${version.votes ? '(' + version.votes + ')' : ''}</span>
+      `;
+
+      menu.appendChild(item);
+    }
+
+    wrapper.appendChild(button);
+    wrapper.appendChild(menu);
+
+    // Toggle dropdown on click
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      wrapper.classList.toggle('ugf-dropdown-open');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+      wrapper.classList.remove('ugf-dropdown-open');
+    });
+
+    return wrapper;
   }
 
   function toggleView() {
@@ -105,12 +220,24 @@
     `;
     container.appendChild(header);
 
+    // Controls row (toggle button + version dropdown)
+    const controlsRow = document.createElement('div');
+    controlsRow.className = 'ugf-controls';
+
     // Toggle button - switches between views
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'ugf-toggle-btn';
     toggleBtn.textContent = 'Original';
     toggleBtn.addEventListener('click', toggleView);
-    container.appendChild(toggleBtn);
+    controlsRow.appendChild(toggleBtn);
+
+    // Add version dropdown if there are other versions
+    if (songData.versions && songData.versions.length > 1) {
+      const versionDropdown = buildVersionDropdown(songData.versions);
+      controlsRow.appendChild(versionDropdown);
+    }
+
+    container.appendChild(controlsRow);
 
     // Sections in columns
     const columnsWrapper = document.createElement('div');
@@ -189,6 +316,121 @@
         color: #888;
       }
 
+      #ugf-root .ugf-controls {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-start;
+        z-index: 100000;
+      }
+
+      #ugf-root .ugf-version-dropdown {
+        position: relative;
+        display: inline-block;
+      }
+
+      #ugf-root .ugf-version-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #2a2a2a;
+        color: #ccc;
+        border: 1px solid #444;
+        padding: 0.4rem 0.8rem;
+        font-family: inherit;
+        font-size: 0.8rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      #ugf-root .ugf-version-btn:hover {
+        background: #333;
+        color: #fff;
+        border-color: #555;
+      }
+
+      #ugf-root .ugf-dropdown-arrow {
+        width: 12px;
+        height: 12px;
+        fill: currentColor;
+        transition: transform 0.2s ease;
+      }
+
+      #ugf-root .ugf-dropdown-open .ugf-dropdown-arrow {
+        transform: rotate(180deg);
+      }
+
+      #ugf-root .ugf-version-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 0.25rem;
+        background: #2a2a2a;
+        border: 1px solid #444;
+        border-radius: 4px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 100001;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      }
+
+      #ugf-root .ugf-version-menu {
+        display: none;
+      }
+
+      #ugf-root .ugf-dropdown-open .ugf-version-menu {
+        display: grid;
+        grid-template-columns: auto auto auto;
+      }
+
+      #ugf-root .ugf-version-item {
+        display: contents;
+      }
+
+      #ugf-root .ugf-version-item > span {
+        padding: 0.5rem 0.5rem;
+        text-decoration: none;
+        font-size: 0.8rem;
+        transition: background 0.15s ease;
+        white-space: nowrap;
+      }
+
+      #ugf-root .ugf-version-item:hover > span {
+        background: #3a3a3a;
+      }
+
+      #ugf-root .ugf-version-item.ugf-version-current > span {
+        background: #333;
+      }
+
+      #ugf-root .ugf-version-name {
+        padding-left: 0.75rem;
+        color: #ccc;
+      }
+
+      #ugf-root .ugf-version-item:hover > .ugf-version-name {
+        color: #fff;
+      }
+
+      #ugf-root .ugf-version-item.ugf-version-current > .ugf-version-name {
+        color: #4fc3f7;
+      }
+
+      #ugf-root .ugf-version-rating {
+        color: #ffd700;
+        text-align: right;
+      }
+
+      #ugf-root .ugf-version-votes {
+        color: #666;
+        font-size: 0.75rem;
+        padding-right: 0.75rem;
+      }
+
       #ugf-root .ugf-columns {
         flex: 1;
         padding-top: 1rem;
@@ -228,9 +470,6 @@
       }
 
       #ugf-root .ugf-toggle-btn {
-        position: fixed;
-        top: 1rem;
-        right: 1rem;
         background: #333;
         color: #888;
         border: 1px solid #444;
@@ -240,7 +479,17 @@
         border-radius: 4px;
         cursor: pointer;
         transition: all 0.2s ease;
-        z-index: 100000;
+      }
+
+      #ugf-root .ugf-btn-rating {
+        color: #ffd700;
+        margin-left: 0.4rem;
+      }
+
+      #ugf-root .ugf-btn-votes {
+        color: #666;
+        font-size: 0.75rem;
+        margin-left: 0.2rem;
       }
 
       #ugf-root .ugf-toggle-btn:hover {
@@ -341,6 +590,16 @@
     // Zoom the wrapper, not the body
     wrapper.style.zoom = '0.1';
     wrapper.style.transformOrigin = 'top left';
+
+    // Click "Show all" button to expand the versions list
+    // Find it by looking for a button containing "Show all" text near the versions section
+    const buttons = document.querySelectorAll('button[aria-expanded="false"]');
+    for (const btn of buttons) {
+      if (btn.textContent.trim().toLowerCase().includes('show all')) {
+        btn.click();
+        break;
+      }
+    }
 
     // Wait for UG's lazy rendering to process visible chords
     setTimeout(() => {
