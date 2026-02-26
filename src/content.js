@@ -393,8 +393,20 @@ import guitarChords from '@tombatossals/chords-db/lib/guitar.json';
     const versions = extractVersions();
 
     // Get the pre element containing chords and lyrics
-    const preEl = document.querySelector('pre.xNWlr');
-    if (!preEl) return null;
+    // Find any pre element that contains chord spans (data-name attribute)
+    let preEl = null;
+    const allPres = document.querySelectorAll('pre');
+    for (const pre of allPres) {
+      if (pre.querySelector('span[data-name]')) {
+        preEl = pre;
+        break;
+      }
+    }
+
+    if (!preEl) {
+      console.log('[UGF] No pre element with chords found');
+      return null;
+    }
 
     // Clone the pre element to preserve the original formatting
     const preClone = preEl.cloneNode(true);
