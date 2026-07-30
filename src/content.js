@@ -668,7 +668,7 @@ import guitarChords from '@tombatossals/chords-db/lib/guitar.json';
     styles.id = 'ugf-styles';
     styles.textContent = `
       #ugf-root {
-        --ug-color-text-primary: #4fc3f7;
+        --ugf-chord-color: #4fc3f7;
         position: fixed;
         top: 0;
         left: 0;
@@ -860,8 +860,12 @@ import guitarChords from '@tombatossals/chords-db/lib/guitar.json';
         line-height: 1.4;
       }
 
+      /* UG puts an inline style="color: var(--ug-color-text-primary)" on chord
+         spans, which resolves to their near-black text color and wins over a
+         normal rule. Force our own color with !important so chords stay blue
+         regardless of UG's theme variables. */
       #ugf-root .ugf-section-content span[data-name] {
-        color: var(--ug-color-text-primary);
+        color: var(--ugf-chord-color) !important;
         font-weight: 600;
       }
 
